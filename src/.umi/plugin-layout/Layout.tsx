@@ -16,6 +16,13 @@ import { useModel } from '@@/plugin-model';
 import { useAccessMarkedRoutes } from '@@/plugin-access';
 
 
+import { LaptopOutlined, NotificationOutlined, UserOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Breadcrumb, Layout, Menu, theme } from 'antd';
+
+const { Header, Content, Footer, Sider } = Layout;
+
+
 // 过滤出需要显示的路由, 这里的filterFn 指 不希望显示的层级
 const filterRoutes = (routes: IRoute[], filterFn: (route: IRoute) => boolean) => {
   if (routes.length === 0) {
@@ -65,6 +72,7 @@ const mapRoutes = (routes: IRoute[]) => {
   })
 }
 
+import { history } from 'umi';
 export default (props: any) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,7 +84,7 @@ export default (props: any) => {
   };
   const { initialState, loading, setInitialState } = initialInfo;
   const userConfig = {
-  "title": "@umijs/max"
+  "title": "umi+and"
 };
 const formatMessage = undefined;
   const runtimeConfig = pluginManager.applyPlugins({
@@ -95,76 +103,145 @@ const formatMessage = undefined;
   const [route] = useAccessMarkedRoutes(mapRoutes(newRoutes));
 
   const matchedRoute = useMemo(() => matchRoutes(route.children, location.pathname)?.pop?.()?.route, [location.pathname]);
+ 
+    const {
+      token: { colorBgContainer },
+    } = theme.useToken();
+    const items2: MenuProps['items'] = [UserOutlined, LaptopOutlined, NotificationOutlined].map(
+        (icon, index) => {
+            const key = String(index + 1);
 
-  return (
-    <ProLayout
-      route={route}
-      location={location}
-      title={userConfig.title || 'plugin-layout'}
-      navTheme="dark"
-      siderWidth={256}
-      onMenuHeaderClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        navigate('/');
-      }}
-      formatMessage={userConfig.formatMessage || formatMessage}
-      menu={{ locale: userConfig.locale }}
-      logo={Logo}
-      menuItemRender={(menuItemProps, defaultDom) => {
-        if (menuItemProps.isUrl || menuItemProps.children) {
-          return defaultDom;
-        }
-        if (menuItemProps.path && location.pathname !== menuItemProps.path) {
-          return (
-            // handle wildcard route path, for example /slave/* from qiankun
-            <Link to={menuItemProps.path.replace('/*', '')} target={menuItemProps.target}>
-              {defaultDom}
-            </Link>
-          );
-        }
-        return defaultDom;
-      }}
-      itemRender={(route) => <Link to={route.path}>{route.breadcrumbName}</Link>}
-      disableContentMargin
-      fixSiderbar
-      fixedHeader
-      {...runtimeConfig}
-      rightContentRender={
-        runtimeConfig.rightContentRender !== false &&
-        ((layoutProps) => {
-          const dom = getRightRenderContent({
-            runtimeConfig,
-            loading,
-            initialState,
-            setInitialState,
-          });
-          if (runtimeConfig.rightContentRender) {
-            return runtimeConfig.rightContentRender(layoutProps, dom, {
-              // BREAK CHANGE userConfig > runtimeConfig
-              userConfig,
-              runtimeConfig,
-              loading,
-              initialState,
-              setInitialState,
-            });
-          }
-          return dom;
-        })
-      }
-    >
-      <Exception
-        route={matchedRoute}
-        noFound={runtimeConfig?.noFound}
-        notFound={runtimeConfig?.notFound}
-        unAccessible={runtimeConfig?.unAccessible}
-        noAccessible={runtimeConfig?.noAccessible}
-      >
-        {runtimeConfig.childrenRender
-          ? runtimeConfig.childrenRender(<Outlet />, props)
-          : <Outlet />
-        }
-      </Exception>
-    </ProLayout>
+            return {
+            key: `sub${key}`,
+            icon: React.createElement(icon),
+            label: `subnav ${key}`,
+
+            children: new Array(4).fill(null).map((_, j) => {
+                const subKey = index * 4 + j + 1;
+                return {
+                key: subKey,
+                label: `option${subKey}`,
+                };
+            }),
+            };
+        },
+    );
+    const menuClick:MenuProps['onClick'] = (e,i,k) => {
+        console.log('click ', e); 
+        let items = route.routes.filter(item => item.id == e.key)
+        console.log(items); 
+        history.push(items[0].path)
+    };
+    return (
+        <Layout>
+            <Header className="header">
+                <div className="logo" />
+                <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['2']} onClick={menuClick} items={route.routes.map((_, index) => {
+                        return {
+                            key: (_.id),
+                            path:_.path,
+                            label: _.name,
+                        };
+                    })
+                } />
+            </Header>
+            <Content style={{ padding: '0 50px' }}>
+                <Layout style={{ padding: '24px 0', background: colorBgContainer }}>
+                <Sider style={{ background: colorBgContainer }} width={200}>
+                    <Menu
+                    mode="inline"
+                    defaultSelectedKeys={['1']}
+                    defaultOpenKeys={['sub1']}
+                    style={{ height: '100%' }}
+                    items={items2}
+                    />
+                </Sider>
+                    <Content style={{ padding: '0 24px', minHeight: 280 }}>
+                              <Exception
+                                    route={matchedRoute}
+                                    noFound={runtimeConfig?.noFound}
+                                    notFound={runtimeConfig?.notFound}
+                                    unAccessible={runtimeConfig?.unAccessible}
+                                    noAccessible={runtimeConfig?.noAccessible}
+                                >
+                                    {runtimeConfig.childrenRender
+                                    ? runtimeConfig.childrenRender(<Outlet />, props)
+                                    : <Outlet />
+                                    }
+                                </Exception>
+                    </Content>
+                </Layout>
+            </Content>
+            <Footer style={{ textAlign: 'center' }}>Footer</Footer>
+        </Layout>
+    // <ProLayout
+    //   route={route}
+    //   location={location}
+    //   title={userConfig.title || 'plugin-layout'}
+    //   navTheme="dark"
+    //   siderWidth={256}
+    //   onMenuHeaderClick={(e) => {
+    //     e.stopPropagation();
+    //     e.preventDefault();
+    //     navigate('/');
+    //   }}
+    //   formatMessage={userConfig.formatMessage || formatMessage}
+    //   menu={{ locale: userConfig.locale }}
+    //   logo={Logo}
+    //   menuItemRender={(menuItemProps, defaultDom) => {
+    //     if (menuItemProps.isUrl || menuItemProps.children) {
+    //       return defaultDom;
+    //     }
+    //     if (menuItemProps.path && location.pathname !== menuItemProps.path) {
+    //       return (
+    //         // handle wildcard route path, for example /slave/* from qiankun
+    //         <Link to={menuItemProps.path.replace('/*', '')} target={menuItemProps.target}>
+    //           {defaultDom}
+    //         </Link>
+    //       );
+    //     }
+    //     return defaultDom;
+    //   }}
+    //   itemRender={(route) => <Link to={route.path}>{route.breadcrumbName}</Link>}
+    //   disableContentMargin
+    //   fixSiderbar
+    //   fixedHeader
+    //   {...runtimeConfig}
+    //   rightContentRender={
+    //     runtimeConfig.rightContentRender !== false &&
+    //     ((layoutProps) => {
+    //       const dom = getRightRenderContent({
+    //         runtimeConfig,
+    //         loading,
+    //         initialState,
+    //         setInitialState,
+    //       });
+    //       if (runtimeConfig.rightContentRender) {
+    //         return runtimeConfig.rightContentRender(layoutProps, dom, {
+    //           // BREAK CHANGE userConfig > runtimeConfig
+    //           userConfig,
+    //           runtimeConfig,
+    //           loading,
+    //           initialState,
+    //           setInitialState,
+    //         });
+    //       }
+    //       return dom;
+    //     })
+    //   }
+    // >
+    //   <Exception
+    //     route={matchedRoute}
+    //     noFound={runtimeConfig?.noFound}
+    //     notFound={runtimeConfig?.notFound}
+    //     unAccessible={runtimeConfig?.unAccessible}
+    //     noAccessible={runtimeConfig?.noAccessible}
+    //   >
+    //     {runtimeConfig.childrenRender
+    //       ? runtimeConfig.childrenRender(<Outlet />, props)
+    //       : <Outlet />
+    //     }
+    //    </Exception>
+    // </ProLayout>
   );
 }
