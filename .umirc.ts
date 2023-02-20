@@ -8,7 +8,8 @@ export default defineConfig({
   request: {},
   layout: {
     title: 'umi+and',
-  },
+    },
+  
   routes: [
     {
       path: '/',
